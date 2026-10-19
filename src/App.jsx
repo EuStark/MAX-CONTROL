@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bug, Rat, Droplets, Worm, Printer, Save, FileText, Trash2, RefreshCw } from "lucide-react";
+import { Bug, Rat, Droplets, Worm, Printer, Save, FileText, Trash2, RefreshCw, History, RotateCcw } from "lucide-react";
 import mascote from "./mascote";
 import { Button } from "./components/ui/button";
 import { Input, Textarea } from "./components/ui/input";
@@ -15,10 +15,12 @@ const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date
 const br = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 const ext = d => `${d.getDate()} de ${MES[d.getMonth()]} de ${d.getFullYear()}`;
 const addMonths = (d, n) => { let r = new Date(d.getFullYear(), d.getMonth() + n, d.getDate()); if (r.getDate() !== d.getDate()) r = new Date(d.getFullYear(), d.getMonth() + n + 1, 0); return r; };
-const hoje = () => { const t = new Date(); return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`; };
-const store = {
-  get(k, f) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch (e) { return f; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+const vazio = () => ({ nome: "", cnpj: "", end: "", cid: "", data: "", meses: "", servicos: [false, false, false, false] });
+const api = async (url, options) => {
+  const response = await fetch(url, { credentials: "same-origin", ...options });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || "Não foi possível concluir a operação.");
+  return body;
 };
 const SERV = [
   { nome: "Desinsetização", Ic: Bug, base: "Amido Hidrazonas.", anti: "Tratamento Sintomático.", total: "30g.", prop: "30g." },
@@ -87,45 +89,92 @@ function Sheet({ f }) {
 const Field = ({ id, label, children }) => <div className="space-y-1.5"><Label htmlFor={id}>{label}</Label>{children}</div>;
 
 export default function App() {
-  const [f, setF] = useState({
-    nome: "BAR E BOTEQUIM RIO VERMELHO LTDA", cnpj: "53.529.710/0001-70",
-    end: "DA FONTE DO BOI, 32, LOJA 01, RIO VERMELHO", cid: "Salvador - BA, 40440-360",
-    data: hoje(), meses: 3, servicos: [true, true, false, false],
-  });
-  const [clientes, setClientes] = useState(() => store.get("cert_clientes", []));
+  const [f, setF] = useState(vazio);
+  const [clientes, setClientes] = useState([]);
+  const [historico, setHistorico] = useState([]);
   const [sel, setSel] = useState("");
   const [tab, setTab] = useState("dados");
   const [scale, setScale] = useState(1);
+  const [mensagem, setMensagem] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [autenticado, setAutenticado] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [erroLogin, setErroLogin] = useState("");
   const box = useRef(null);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const bind = k => ({ id: k, value: f[k], onChange: e => set(k, e.target.value) });
 
+  const atualizarListas = async () => {
+    const [cs, hs] = await Promise.all([api("/api/clientes"), api("/api/auditoria")]);
+    setClientes(cs); setHistorico(hs);
+  };
+
   useEffect(() => {
+    api("/api/login").then(async session => {
+      setAutenticado(session.authenticated);
+      if (session.authenticated) await atualizarListas();
+      else if (!session.configured) setErroLogin("Configure APP_PASSWORD na Vercel para proteger o sistema.");
+    }).catch(e => setErroLogin(e.message)).finally(() => setCarregando(false));
+  }, []);
+
+  useEffect(() => {
+    if (!autenticado || !box.current) return;
     const fit = () => { const w = box.current && box.current.clientWidth; if (w) setScale(Math.max(0.3, Math.min(1, (w - 48) / 794))); };
     fit();
     const ro = new ResizeObserver(fit); ro.observe(box.current);
     return () => ro.disconnect();
-  }, []);
+  }, [autenticado]);
 
-  const persist = l => { setClientes(l); store.set("cert_clientes", l); };
   const dados = () => ({ nome: f.nome, cnpj: f.cnpj, end: f.end, cid: f.cid });
-  const salvar = () => { const c = dados(); persist(clientes.filter(x => x.cnpj !== c.cnpj).concat(c)); setSel(c.cnpj); };
-  const atualizar = () => {
-    if (!sel) return;
-    const c = dados();
-    persist(clientes.filter(x => x.cnpj === sel || x.cnpj !== c.cnpj).map(x => (x.cnpj === sel ? c : x)));
-    setSel(c.cnpj);
+  const executar = async acao => {
+    setErro(""); setMensagem("");
+    try { await acao(); await atualizarListas(); }
+    catch (e) { setErro(e.message); }
   };
-  const remover = () => { if (!sel) return; persist(clientes.filter(x => x.cnpj !== sel)); setSel(""); };
-  const carregar = cnpj => { const c = clientes.find(x => x.cnpj === cnpj); if (c) { setF(p => ({ ...p, ...c })); setSel(cnpj); } };
-  const imprimir = () => window.print();
+  const validar = () => {
+    if (!f.nome.trim() || !f.cnpj.trim()) throw new Error("Preencha pelo menos a empresa e o CNPJ.");
+  };
+  const salvar = () => executar(async () => {
+    validar();
+    const c = await api("/api/clientes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados()) });
+    setSel(c.id); setMensagem("Cliente salvo e registrado no histórico.");
+  });
+  const atualizar = () => executar(async () => {
+    if (!sel) return;
+    validar();
+    const c = await api(`/api/clientes?id=${encodeURIComponent(sel)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dados()) });
+    setSel(c.id); setMensagem("Cliente atualizado e alteração registrada.");
+  });
+  const remover = () => executar(async () => {
+    if (!sel) return;
+    await api(`/api/clientes?id=${encodeURIComponent(sel)}`, { method: "DELETE" });
+    setSel(""); setF(vazio()); setMensagem("Cliente apagado e exclusão registrada.");
+  });
+  const carregar = id => { const c = clientes.find(x => x.id === id); if (c) { setF(p => ({ ...p, ...c })); setSel(id); setErro(""); setMensagem(""); } };
+  const imprimir = () => executar(async () => {
+    await api("/api/auditoria", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "certificado_impresso", cliente: dados(), certificado: { data: f.data, meses: f.meses, servicos: SERV.filter((_, i) => f.servicos[i]).map(s => s.nome) } }) });
+    setMensagem("Impressão registrada no histórico.");
+    window.print();
+  });
+  const novo = () => { setF(vazio()); setSel(""); setErro(""); setMensagem("Campos limpos para um novo certificado."); };
+  const entrar = async event => {
+    event.preventDefault(); setErroLogin("");
+    try { await api("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: senha }) }); setAutenticado(true); setSenha(""); await atualizarListas(); }
+    catch (e) { setErroLogin(e.message); }
+  };
+  const sair = async () => { await api("/api/login", { method: "DELETE" }); setAutenticado(false); setF(vazio()); setSel(""); };
   const marcados = f.servicos.map((v, i) => (v ? String(i) : null)).filter(Boolean);
+
+  if (carregando) return <div className="grid min-h-screen place-items-center text-muted-foreground">Carregando sistema…</div>;
+  if (!autenticado) return <main className="grid min-h-screen place-items-center p-4"><Card className="w-full max-w-md"><CardHeader><CardTitle>Acesso ao sistema</CardTitle></CardHeader><CardContent><form onSubmit={entrar} className="space-y-4"><Field id="senha" label="Senha de acesso"><Input id="senha" type="password" autoComplete="current-password" value={senha} onChange={e => setSenha(e.target.value)} required /></Field><Button type="submit" className="w-full">Entrar</Button>{erroLogin && <p role="alert" className="text-sm text-red-600">{erroLogin}</p>}</form></CardContent></Card></main>;
 
   return (
     <Tabs value={tab} onValueChange={setTab}>
       <header className="sticky top-0 z-20 flex items-center gap-3 rounded-b-2xl bg-background/90 shadow-neu-sm px-4 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] backdrop-blur print:hidden">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-neu-sm"><FileText className="h-5 w-5" /></div>
         <div className="leading-tight"><b className="block text-[15px]">Certificados de Garantia</b><span className="hidden text-xs text-muted-foreground sm:block">Max Control · Desinsetizadora</span></div>
+        <Button variant="ghost" className="ml-auto px-3" onClick={sair}>Sair</Button>
         <TabsList className="ml-auto lg:hidden">
           <TabsTrigger value="dados">Dados</TabsTrigger>
           <TabsTrigger value="previa">Prévia</TabsTrigger>
@@ -140,8 +189,8 @@ export default function App() {
               <Field label="Clientes salvos">
                 <div className="flex gap-2">
                   <Select value={sel} onValueChange={carregar} disabled={!clientes.length}>
-                    <SelectTrigger className="min-w-0 flex-1"><SelectValue placeholder={clientes.length ? "Selecionar cliente…" : "Nenhum cliente salvo"} /></SelectTrigger>
-                    <SelectContent>{clientes.map(c => <SelectItem key={c.cnpj} value={c.cnpj}>{c.nome}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="min-w-0 flex-1"><SelectValue placeholder={carregando ? "Carregando…" : clientes.length ? "Selecionar cliente…" : "Nenhum cliente salvo"} /></SelectTrigger>
+                    <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome} · {c.cnpj}</SelectItem>)}</SelectContent>
                   </Select>
                   <Button variant="outline" className="shrink-0 px-3" onClick={remover} disabled={!sel} aria-label="Remover cliente salvo"><Trash2 className="h-4 w-4" /></Button>
                 </div>
@@ -154,6 +203,14 @@ export default function App() {
                 <Button variant="outline" className="flex-1 px-3" onClick={salvar}><Save className="h-4 w-4" />Salvar cliente</Button>
                 <Button className="flex-1 px-3" onClick={atualizar} disabled={!sel}><RefreshCw className="h-4 w-4" />Atualizar cliente</Button>
               </div>
+              <Button variant="ghost" className="mt-2 w-full" onClick={novo}><RotateCcw className="h-4 w-4" />Novo certificado / Limpar campos</Button>
+              {(erro || mensagem) && <p role="status" className={`mt-2 text-sm ${erro ? "text-red-600" : "text-emerald-700"}`}>{erro || mensagem}</p>}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle><span className="inline-flex items-center gap-2"><History className="h-4 w-4" />Histórico de atividades</span></CardTitle></CardHeader>
+            <CardContent className="max-h-72 space-y-2 overflow-auto text-sm">
+              {historico.length ? historico.map(h => <div key={h.id} className="border-b border-border pb-2"><b>{({ cliente_criado: "Cliente salvo", cliente_atualizado: "Cliente atualizado", cliente_apagado: "Cliente apagado", certificado_impresso: "Certificado impresso" })[h.acao] || h.acao}</b><div>{h.cliente?.nome || "Sem nome"}{h.cliente?.cnpj ? ` · ${h.cliente.cnpj}` : ""}</div><time className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</time>{(h.antes || h.depois) && <details className="mt-1"><summary className="cursor-pointer text-xs">Ver dados registrados</summary>{h.antes && <div className="mt-1"><b>Antes</b><pre className="overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(JSON.parse(h.antes), null, 2)}</pre></div>}{h.depois && <div className="mt-1"><b>Depois / certificado</b><pre className="overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(JSON.parse(h.depois), null, 2)}</pre></div>}</details>}</div>) : <p className="text-muted-foreground">{carregando ? "Carregando histórico…" : "Nenhuma atividade registrada."}</p>}
             </CardContent>
           </Card>
           <Card>

@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
-// viteSingleFile embute JS/CSS no HTML, então o vite.html abre com duplo clique (file://).
+// Mantém o front-end em um único index.html para a publicação estática.
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   base: "./",
