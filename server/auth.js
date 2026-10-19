@@ -35,5 +35,5 @@ export function clearSessionCookie() {
 }
 
 export function passwordConfigured() {
-  return Boolean(process.env.APP_PASSWORD && process.env.APP_PASSWORD.length >= 12);
+  return Boolean(process.env.APP_PASSWORD && process.env.APP_PASSWORD.length >= 11);
 }
