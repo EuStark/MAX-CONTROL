@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root{--background:220 26% 92%;--foreground:222 35% 18%;--card:220 26% 92%;--muted:220 22% 88%;--muted-foreground:218 14% 40%;--border:220 20% 84%;--input:220 20% 84%;--primary:224 70% 50%;--primary-foreground:0 0% 100%;--accent:221 60% 90%;--accent-foreground:224 70% 38%;--ring:224 70% 50%;--radius:1rem;--sh-d:#c3cad8;--sh-l:#ffffff}
+@media (prefers-color-scheme:dark){:root{--background:224 22% 15%;--foreground:210 30% 94%;--card:224 22% 15%;--muted:224 20% 18%;--muted-foreground:215 18% 68%;--border:224 20% 22%;--input:224 20% 22%;--primary:213 90% 68%;--primary-foreground:222 47% 11%;--accent:218 40% 24%;--accent-foreground:213 90% 82%;--sh-d:#0f131b;--sh-l:#232b3d}}
+@layer base{body{@apply bg-background font-sans text-foreground antialiased;-webkit-tap-highlight-color:transparent}}
+@page{size:A4;margin:0}
