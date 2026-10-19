@@ -43,7 +43,7 @@ function Sheet({ f }) {
       Quantidade Total do Produto Utilizado: por área: {s.total}<br />Proporção do Produto Utilizado por área: {s.prop}
     </div>); };
   return (
-    <div className="min-h-[1123px] w-[794px] bg-white px-[46px] pb-[30px] pt-[46px] text-center font-[Arial,Helvetica,sans-serif] text-[12.5px] leading-[1.3] text-[#0b2a5b] print:min-h-[297mm] print:w-[210mm]">
+    <div className="certificate-sheet min-h-[1123px] w-[794px] bg-white px-[46px] pb-[30px] pt-[46px] text-center font-[Arial,Helvetica,sans-serif] text-[12.5px] leading-[1.3] text-[#0b2a5b] print:min-h-[297mm] print:w-[210mm]">
       <div className="relative flex min-h-[136px] items-center justify-center">
         <div className="absolute left-1.5 top-0 h-[136px] w-[118px]">
           <img src={mascote} alt="Mascote" className="h-full w-full object-contain mix-blend-multiply" />
@@ -176,13 +176,13 @@ export default function App() {
         <div className="leading-tight"><b className="block text-[15px]">Certificados de Garantia</b><span className="hidden text-xs text-muted-foreground sm:block">Max Control · Desinsetizadora</span></div>
         <Button variant="ghost" className="ml-auto px-3" onClick={sair}>Sair</Button>
         <TabsList className="ml-auto lg:hidden">
-          <TabsTrigger value="dados">Dados</TabsTrigger>
-          <TabsTrigger value="previa">Prévia</TabsTrigger>
+          <TabsTrigger value="dados">Preencher</TabsTrigger>
+          <TabsTrigger value="previa">Ver certificado</TabsTrigger>
         </TabsList>
       </header>
 
       <main className="mx-auto grid max-w-[1440px] items-start gap-5 p-3 pb-28 lg:grid-cols-[400px_1fr] lg:p-5 print:block print:p-0">
-        <TabsContent value="dados" forceMount className="m-0 space-y-4 lg:!block print:!hidden">
+        <TabsContent value="dados" forceMount className="m-0 space-y-4 lg:!block print:!hidden"><p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground lg:hidden">Preencha os campos abaixo. Toque em “Ver certificado” para conferir antes de imprimir.</p>
           <Card>
             <CardHeader><CardTitle>Cliente</CardTitle></CardHeader>
             <CardContent>
