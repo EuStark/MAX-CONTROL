@@ -170,14 +170,14 @@ export default function App() {
   if (!autenticado) return <main className="grid min-h-screen place-items-center p-4"><Card className="w-full max-w-md"><CardHeader><CardTitle>Acesso ao sistema</CardTitle></CardHeader><CardContent><form onSubmit={entrar} className="space-y-4"><Field id="senha" label="Senha de acesso"><Input id="senha" type="password" autoComplete="current-password" value={senha} onChange={e => setSenha(e.target.value)} required /></Field><Button type="submit" className="w-full">Entrar</Button>{erroLogin && <p role="alert" className="text-sm text-red-600">{erroLogin}</p>}</form></CardContent></Card></main>;
 
   return (
-    <Tabs value={tab} onValueChange={setTab}>
-      <header className="sticky top-0 z-20 flex items-center gap-3 rounded-b-2xl bg-background/90 shadow-neu-sm px-4 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] backdrop-blur print:hidden">
+    <Tabs value={tab} onValueChange={value => { setTab(value); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+      <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-b-2xl bg-background/90 shadow-neu-sm px-4 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] backdrop-blur print:hidden">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-neu-sm"><FileText className="h-5 w-5" /></div>
-        <div className="leading-tight"><b className="block text-[15px]">Certificados de Garantia</b><span className="hidden text-xs text-muted-foreground sm:block">Max Control · Desinsetizadora</span></div>
-        <Button variant="ghost" className="ml-auto px-3" onClick={sair}>Sair</Button>
-        <TabsList className="ml-auto lg:hidden">
-          <TabsTrigger value="dados">Preencher</TabsTrigger>
-          <TabsTrigger value="previa">Ver certificado</TabsTrigger>
+        <div className="min-w-0 leading-tight"><b className="block text-[15px]">Certificados de Garantia</b><span className="hidden text-xs text-muted-foreground sm:block">Max Control · Desinsetizadora</span></div>
+        <Button variant="ghost" className="px-2" onClick={sair}>Sair</Button>
+        <TabsList className="col-span-3 grid w-full grid-cols-2 lg:hidden">
+          <TabsTrigger value="dados" className="w-full">Preencher</TabsTrigger>
+          <TabsTrigger value="previa" className="w-full">Ver certificado</TabsTrigger>
         </TabsList>
       </header>
 
@@ -216,13 +216,13 @@ export default function App() {
           <Card>
             <CardHeader><CardTitle>Serviço</CardTitle></CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field id="data" label="Data do serviço"><Input type="date" {...bind("data")} /></Field>
                 <Field id="meses" label="Garantia (meses)"><Input type="number" inputMode="numeric" min="1" {...bind("meses")} /></Field>
               </div>
               <Field label="Serviços realizados">
-                <ToggleGroup type="multiple" value={marcados} onValueChange={v => set("servicos", SERV.map((_, i) => v.includes(String(i))))}>
-                  {SERV.map((s, i) => <ToggleGroupItem key={i} value={String(i)}><s.Ic className="h-5 w-5 shrink-0" />{s.nome}</ToggleGroupItem>)}
+                <ToggleGroup type="multiple" value={marcados} className="flex flex-wrap gap-2" onValueChange={v => set("servicos", SERV.map((_, i) => v.includes(String(i))))}>
+                  {SERV.map((s, i) => <ToggleGroupItem key={i} value={String(i)} className="h-auto min-h-10 w-[calc(50%-0.25rem)] justify-start whitespace-normal px-2 py-2 text-left"><s.Ic className="h-5 w-5 shrink-0" />{s.nome}</ToggleGroupItem>)}
                 </ToggleGroup>
               </Field>
             </CardContent>
