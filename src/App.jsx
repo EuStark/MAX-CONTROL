@@ -208,12 +208,6 @@ export default function App() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle><span className="inline-flex items-center gap-2"><History className="h-4 w-4" />Histórico de atividades</span></CardTitle></CardHeader>
-            <CardContent className="max-h-72 space-y-2 overflow-auto text-sm">
-              {historico.length ? historico.map(h => <div key={h.id} className="border-b border-border pb-2"><b>{({ cliente_criado: "Cliente salvo", cliente_atualizado: "Cliente atualizado", cliente_apagado: "Cliente apagado", certificado_impresso: "Certificado impresso" })[h.acao] || h.acao}</b><div>{h.cliente?.nome || "Sem nome"}{h.cliente?.cnpj ? ` · ${h.cliente.cnpj}` : ""}</div><time className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</time>{(h.antes || h.depois) && <details className="mt-1"><summary className="cursor-pointer text-xs">Ver dados registrados</summary>{h.antes && <div className="mt-1"><b>Antes</b><pre className="overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(JSON.parse(h.antes), null, 2)}</pre></div>}{h.depois && <div className="mt-1"><b>Depois / certificado</b><pre className="overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(JSON.parse(h.depois), null, 2)}</pre></div>}</details>}</div>) : <p className="text-muted-foreground">{carregando ? "Carregando histórico…" : "Nenhuma atividade registrada."}</p>}
-            </CardContent>
-          </Card>
-          <Card>
             <CardHeader><CardTitle>Serviço</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
