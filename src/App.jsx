@@ -22,7 +22,7 @@ const api = async (url, options) => {
   if (!response.ok) throw new Error(body.error || "Não foi possível concluir a operação.");
   return body;
 };
-const SERV = [
+const carregarHtml2Pdf = () => window.html2pdf ? Promise.resolve(window.html2pdf) : new Promise((resolve, reject) => { const script = document.createElement("script"); script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.12.0/html2pdf.bundle.min.js"; script.onload = () => resolve(window.html2pdf); script.onerror = () => reject(new Error("Não foi possível carregar o gerador de PDF.")); document.head.appendChild(script); }); const SERV = [
   { nome: "Desinsetização", Ic: Bug, base: "Amido Hidrazonas.", anti: "Tratamento Sintomático.", total: "30g.", prop: "30g." },
   { nome: "Desratização", Ic: Rat, base: "Brodifacoun.", anti: "Vitamina K I Injetável.", total: "400g.", prop: "25g para cada 25 m2." },
   { nome: "Controle de Mosquito", Ic: Droplets, base: "Piretroide.", anti: "Tratamento Sintomático.", total: "200 ml.", prop: "50 ml para cada 05 litros de água." },
@@ -155,7 +155,7 @@ export default function App() {
   const imprimir = () => executar(async () => {
     await api("/api/auditoria", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "certificado_impresso", cliente: dados(), certificado: { data: f.data, meses: f.meses, servicos: SERV.filter((_, i) => f.servicos[i]).map(s => s.nome) } }) });
     setMensagem("Impressão registrada no histórico.");
-    window.print();
+    const gerar = await carregarHtml2Pdf(); const original = document.querySelector(".certificate-sheet"); if (!original) throw new Error("Certificado não encontrado."); const copia = original.cloneNode(true); Object.assign(copia.style, { position: "fixed", left: "-10000px", top: "0", transform: "none", width: "794px", height: "1123px", minHeight: "1123px", padding: "46px 46px 30px", boxSizing: "border-box", visibility: "visible", backgroundColor: "#fff" }); document.body.appendChild(copia); const nomeArquivo = (f.nome || "certificado").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "certificado"; try { await gerar().set({ margin: 0, filename: `certificado-${nomeArquivo}.pdf`, image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#fff", scrollY: 0 }, jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }, pagebreak: { mode: ["avoid-all", "css", "legacy"] } }).from(copia).save(); } finally { copia.remove(); } setMensagem("PDF gerado e baixado com sucesso.");
   });
   const novo = () => { setF(vazio()); setSel(""); setErro(""); setMensagem("Campos limpos para um novo certificado."); };
   const entrar = async event => {
