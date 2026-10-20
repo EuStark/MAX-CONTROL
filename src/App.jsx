@@ -155,7 +155,7 @@ export default function App() {
   const imprimir = () => executar(async () => {
     await api("/api/auditoria", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "certificado_impresso", cliente: dados(), certificado: { data: f.data, meses: f.meses, servicos: SERV.filter((_, i) => f.servicos[i]).map(s => s.nome) } }) });
     setMensagem("Impressão registrada no histórico.");
-    window.print();
+    const folha=document.querySelector(".certificate-sheet");if(folha){const medida=folha.cloneNode(true);Object.assign(medida.style,{position:"fixed",left:"-10000px",top:"0",width:"794px",height:"auto",minHeight:"0",transform:"none",visibility:"hidden"});document.body.appendChild(medida);const altura=medida.scrollHeight;medida.remove();folha.style.setProperty("--certificate-print-scale",String(Math.min(.94,1120/Math.max(altura,1))))}window.print();
   });
   const novo = () => { setF(vazio()); setSel(""); setErro(""); setMensagem("Campos limpos para um novo certificado."); };
   const entrar = async event => {
